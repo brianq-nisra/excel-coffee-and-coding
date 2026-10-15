@@ -1,0 +1,3619 @@
+---
+title: "05 Charts Sub Report"
+output: html_document
+knit: (function(input, ...) {
+  rmarkdown::render(
+    input,
+    output_dir = "../demo/demo_outputs/",
+    output_file = paste0(
+      xfun::sans_ext(input),
+      "_",
+      format(Sys.time(), "%d-%m-%Y_%H%M"),
+      ".html"
+    ),
+    envir = globalenv()
+  )
+})
+---
+
+```{r charts_settings, include=FALSE}
+# Set chunk options for all chunks in this file.
+
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE,
+  echo = FALSE
+)
+```
+
+
+```{r setup_charts}
+library(here)
+
+source(
+  here(
+    "code",
+    "demo",
+    "demo_data_prep.R"
+  )
+)
+```
+
+This section includes different types of charts. These include line charts,
+column charts, pie charts, tree maps and a donut chart.
+
+### Good practice for charts
+
+* Give charts a primary title describing the main trend or message (see examples
+below).
+* Add a statistical subtitle that explains the measure, location and time
+period. 
+* Clearly label data and categories.
+* Show all chart text horizontally, including axis labels.
+* Write labels in full instead of using abbreviations.
+* If you need to use abbreviations, explain them the first time you use them.
+* Avoid using a legend where possible.
+* If you need a legend, place it above the chart.
+* Avoid using charts with two axes.
+
+### Accessible charts
+#### Colours
+
+* Do not use colour on its own to show information (e.g. to read a legend).
+* Make sure chart colours are easy to tell apart and easy to see against the
+background.
+* There is an accessible colour palette on the [Dissemination channel on NISRA Teams](https://teams.microsoft.com/l/entity/0ae35b36-0fd7-422e-805b-d53af1579093/_djb2_msteams_prefix_3480381164?context=%7B%22channelId%22%3A%2219%3A81967af3c68f424ab44a24e05c00fc6d%40thread.tacv2%22%7D&tenantId=e7a13aea-9437-4db7-a22b-cfaa4ce33b6e)
+* Check contrast at least 3:1 for chart elements.
+* Check contrast is at least 4.5:1 for text.
+
+#### Help users access chart data and key messages
+
+* Explain the main message(s) of the chart in text above or below it (i.e.
+provide a clear text alternative).
+* Provide the chart data in CSV or Excel format, or give users a way to request
+it.
+* Add alt text to static chart images describing the chart type and content.
+* Think about how a screen reader will read labels and punctuation if your
+charts are interactive.
+* Make sure charts work well on different screen sizes, such as mobile phones,
+laptops and desktop computers.
+* Be aware of how interactive (e.g. Plotly) charts resize:
+  * annotations easily get crowded and overlap.
+  * plotly resizes the x axis which alters how the trend is perceived.
+* Consider adding a message for mobile users to turn their phone sideways to
+view the chart.
+* If you create charts with the Plotly package, turn off the Plotly logo and 
+icons. This helps reduce auditory clutter and avoids unnecessary repeated links.
+
+For more information, see the [UK Government Analysis Function (GAF) guidance on designing charts](https://analysisfunction.civilservice.gov.uk/policy-store/data-visualisation-charts/).
+
+### Single line chart
+
+This section shows a static line chart and an interactive line chart. 
+
+#### Chart features
+* Text (including labels) and lines all have good colour contrasts against
+white background.
+* Data labels are at the end of the line to prevent overlap when the chart
+changes size on different devices.
+
+Add clear descriptive text before or after the chart. This helps all users
+understand the main message of the chart.
+
+#### Non-zero axes
+To add a broken axis symbol to a plotly chart, use the "fn_break_axis" function.
+Set the linecolor to match the colour used for the "y-axis" in the layout
+settings. This function is a NISRA created function that can be found in the
+functions folder. It can only be used with plotly charts.
+
+To add a broken axis symbol to a 'ggplot' chart, add it as an annotation. The
+'ggplot' package does not provide a built-in broken feature.
+
+The code below shows how to add a broken axis symbol to both 'plotly' and
+'ggplot' charts.
+
+
+#### Figure 1: Mid year population estimates continue to increase 
+##### Northern Ireland mid year population estimate (total) between `r earliest_year` and `r latest_year`
+
+##### <span class="sr-only">Figure 1 tabs</span> {.tabset}
+
+###### Figure 1 plotly
+
+```{r figure_1_plotly, echo = TRUE, warnings = FALSE, message = FALSE, fig.alt="Figure 1 alt text example. More detail on the trends are included in the text directly above or below the chart, and data can be downloaded using the button below.", out.width="100%", out.height="100%"}
+year1_lab <- list(
+  x = ~ mid_year_ending[1] + 0.5,
+  y = ~ ni_pop_total[1], # sets position of label
+  xanchor = "right",
+  yanchor = "middle", # alignment of label
+  text = ~ paste0(
+    earliest_year,
+    ": \n",
+    round_half_up(
+      ni_pop_total[1] / 1e6,
+      2
+    ),
+    "m"
+  ),
+  # punctuated and formatted label text
+  showarrow = FALSE, # turn off otherwise get line between label and chart
+  font = list(
+    size = 14,
+    color = nisra_blue
+  )
+)
+
+year2_lab <- list(
+  x = ~ tail(
+    mid_year_ending,
+    n = 1
+  ), # position at last value of x variable
+  y = ~ tail(
+    ni_pop_total,
+    n = 1
+  ), # position at last value of y variable
+  xanchor = "left",
+  yanchor = "middle", # alignment
+  # punctuated and formatted label text
+  text = ~ paste0(
+    latest_year,
+    ": \n",
+    round_half_up(
+      tail(
+        ni_pop_total, 1
+      ) / 1e6,
+      2
+    ),
+    "m"
+  ),
+  showarrow = FALSE,
+  font = list(
+    size = 14,
+    color = nisra_blue
+  )
+)
+# create annotations
+# annotation on vertical line
+note_1 <- list(
+  x = 0.41,
+  y = 1,
+  text = "2009",
+  showarrow = FALSE,
+  xref = "paper",
+  yref = "paper",
+  xanchor = "left",
+  align = "left",
+  font = list(
+    size = 14,
+    color = nisra_navy,
+    family = "Arial black"
+  )
+)
+# use annotation rather than y axis title variable for horizontal text
+yaxistitle <- list(
+  x = 0.02,
+  y = 1.03,
+  text = "Population (Millions)",
+  showarrow = FALSE,
+  xref = "paper",
+  yref = "paper",
+  xanchor = "center",
+  yanchor = "middle",
+  xshift = 0,
+  yshift = 0,
+  font = list(
+    size = 14,
+    color = "black"
+  )
+)
+# Create the caption - Note the non-zero axis
+note_2 <- list(
+  x = 0.75,
+  y = -0.115,
+  text = "Note the non-zero axis",
+  showarrow = FALSE,
+  xref = "paper",
+  yref = "paper",
+  xanchor = "left",
+  align = "left",
+  font = list(
+    size = 14,
+    color = nisra_navy
+  )
+)
+# aesthetic definitions for vertical line used in fig1
+vline <- function(x = 0, color = nisra_navy) {
+  list(
+    type = "line",
+    y0 = 0,
+    y1 = 1,
+    yref = "paper",
+    x0 = x,
+    x1 = x,
+    line = list(
+      color = color,
+      dash = "dot"
+    )
+  )
+}
+
+# create line chart (type = scatter and mode = line)
+fig1 <- plot_ly(
+  df_annual_pop_tot,
+  x = ~mid_year_ending,
+  y = ~ni_pop_total,
+  name = "Northern Ireland population",
+  line = list(
+    color = nisra_blue
+  ),
+  type = "scatter",
+  mode = "line",
+  hoverinfo = "text",
+  text = ~ paste0(
+    mid_year_ending,
+    ": ",
+    format(
+      round_half_up(
+        ni_pop_total / 1e6,
+        2
+      ),
+      nsmall = 2
+    ),
+    "m"
+  )
+) |>
+  layout(
+    showlegend = FALSE,
+    font = list(
+      family = "Arial",
+      size = 14
+    ),
+    xaxis = list(
+      title = "Year",
+      showline = TRUE,
+      linecolor = "#000000",
+      showgrid = FALSE,
+      showticklabels = TRUE,
+      range = c(
+        1999,
+        2024
+      ),
+      ticks = "outside",
+      tickwidth = 2
+    ),
+    yaxis = list(
+      title = "",
+      showline = TRUE,
+      linecolor = "#000000",
+      showgrid = FALSE
+    ),
+    annotations = list(
+      year1_lab,
+      year2_lab,
+      note_1,
+      yaxistitle,
+      note_2
+    )
+  ) |>
+  # To add the broken axis symbol pipe the function "fn_break_axis" with
+  # "linecolor" matching the colour given above. This function is a NISRA
+  # created function that can be found in the functions folder.
+  fn_break_axis(
+    linecolor = "#000000",
+    ref_line = vline(2009)
+  ) |>
+  f_responsive_annotations()
+# modebar is series of icons and plotly logo linked to plotly site. Turned off
+# throughout to avoid multiple links going to same destination (poor
+# accessibility) and icons can create visual clutter.
+fig1 <- fig1 |>
+  config(
+    displayModeBar = FALSE
+  )
+
+fig1 <- htmlwidgets::onRender(
+  fig1,
+  "
+  function(el, x) {
+    window.fig1_chart = el;
+
+    setTimeout(function() {
+      Plotly.Plots.resize(el);
+    }, 200);
+  }
+  "
+)
+
+fig1
+```
+
+```{r figure1_dl_buttons_plotly}
+# call make tables function to create chart download buttons
+f_make_tables(
+  data = df_fig1_xls,
+  title = fig1_title,
+  data_style = ns_comma,
+  data_dir = here(
+    "code",
+    "demo",
+    "demo_outputs",
+    "figdata"
+  ),
+  plotly_id = "fig1_chart"
+)
+```
+
+###### Figure 1 plotly zero axis
+
+```{r figure_1_plotly_zero_axis, echo = TRUE, warnings = FALSE, message = FALSE, fig.alt="Figure 1 alt text example. More detail on the trends are included in the text directly above or below the chart, and data can be downloaded using the button below.", out.width="100%", out.height="100%"}
+year1_lab <- list(
+  x = ~ mid_year_ending[1],
+  y = ~ ni_pop_total[1], # sets position of label
+  xanchor = "right",
+  yanchor = "middle", # alignment of label
+  text = ~ paste0(
+    earliest_year,
+    ": \n",
+    round_half_up(
+      ni_pop_total[1] / 1e6,
+      2
+    ),
+    "m"
+  ),
+  # punctuated and formatted label text
+  showarrow = FALSE, # turn off otherwise get line between label and chart
+  font = list(
+    size = 14,
+    color = nisra_blue
+  )
+)
+
+year2_lab <- list(
+  x = ~ tail(
+    mid_year_ending,
+    n = 1
+  ), # position at last value of x variable
+  y = ~ tail(
+    ni_pop_total,
+    n = 1
+  ), # position at last value of y variable
+  xanchor = "left",
+  yanchor = "middle", # alignment
+  # punctuated and formatted label text
+  text = ~ paste0(
+    latest_year,
+    ": \n",
+    round_half_up(
+      tail(ni_pop_total, 1) / 1e6,
+      2
+    ),
+    "m"
+  ),
+  showarrow = FALSE,
+  font = list(
+    size = 14,
+    color = nisra_blue
+  )
+)
+
+# create annotations
+# annotation on vertical line
+note_1 <- list(
+  x = 0.41,
+  y = 1, # position of annotation
+  text = "2009",
+  showarrow = FALSE,
+  xref = "paper",
+  yref = "paper",
+  xanchor = "left",
+  align = "left",
+  font = list(
+    size = 14,
+    color = nisra_navy,
+    family = "Arial black"
+  )
+)
+
+# use annotation rather than y axis title variable for horizontal text
+yaxistitle <- list(
+  x = 0.02,
+  y = 1.06,
+  text = "Population (Millions)",
+  showarrow = FALSE,
+  xref = "paper",
+  yref = "paper",
+  xanchor = "center",
+  yanchor = "centre",
+  xshift = 0,
+  yshift = 0,
+  font = list(
+    size = 14,
+    color = "black"
+  )
+)
+
+# aesthetic definitions for vertical line used in fig1
+vline <- function(x = 0, color = nisra_navy) {
+  list(
+    type = "line",
+    y0 = 0,
+    y1 = 1,
+    yref = "paper",
+    x0 = x,
+    x1 = x,
+    line = list(
+      color = color,
+      dash = "dot"
+    )
+  )
+}
+
+# create line chart (type = scatter and mode = line)
+fig1 <- plot_ly(
+  df_annual_pop_tot,
+  x = ~mid_year_ending,
+  y = ~ni_pop_total,
+  name = "Northern Ireland population",
+  line = list(
+    color = nisra_blue
+  ),
+  type = "scatter",
+  mode = "line",
+  hoverinfo = "text",
+  # formatting hover text to millions(m) to 2dp
+  text = ~ paste0(
+    mid_year_ending,
+    ": ",
+    format(
+      round_half_up(
+        ni_pop_total / 1e6,
+        2
+      ),
+      nsmall = 2
+    ),
+    "m"
+  )
+) |>
+  layout(
+    showlegend = FALSE,
+    font = list(
+      family = "Arial",
+      size = 14
+    ),
+    xaxis = list(
+      title = "Year",
+      showline = TRUE,
+      linecolor = "#000000",
+      showgrid = FALSE,
+      showticklabels = TRUE,
+      range = c(
+        1999,
+        2024
+      ),
+      ticks = "outside",
+      tickwidth = 2
+    ),
+    yaxis = list(
+      title = "",
+      showline = TRUE,
+      range = c(
+        0,
+        2100000
+      ),
+      linecolor = "#000000",
+      showgrid = FALSE
+    ),
+    annotations = list(
+      year1_lab,
+      year2_lab,
+      note_1,
+      yaxistitle
+    )
+  ) |>
+  layout(
+    shapes = list(
+      vline(2009)
+    )
+  ) |>
+  f_responsive_annotations()
+
+# modebar is series of icons and plotly logo linked to plotly site. Turned off
+# throughout to avoid multiple links going to same destination (poor
+# accessibility) and icons can create visual clutter.
+fig1 <- fig1 |>
+  config(
+    displayModeBar = FALSE
+  )
+
+fig1 <- htmlwidgets::onRender(
+  fig1,
+  "
+  function(el, x) {
+    window.fig1_zero_chart = el;
+  }
+  "
+)
+
+fig1
+```
+
+```{r figure1_dl_buttons_plotly_zero_axis}
+# call make tables function to create chart download buttons
+f_make_tables(
+  data = df_fig1_xls,
+  title = fig1_title,
+  data_style = ns_comma,
+  data_dir = here(
+    "code",
+    "demo",
+    "demo_outputs",
+    "figdata"
+  ),
+  plotly_id = "fig1_zero_chart"
+)
+```
+
+###### Figure 1 static 
+
+```{r figure_1_static, echo = TRUE, out.width="100%", fig.alt="line chart showing growth in population from 2001 to 2019. More detail on trends is included in text immediately above or below the chart" }
+fig1_static <- ggline(
+  df_annual_pop_tot,
+  x = "mid_year_ending",
+  y = "ni_pop_total",
+  plot_type = "l",
+  color = nisra_blue,
+  linetype = "solid",
+  size = 1,
+  caption = "Note the non-zero axis",
+  xlim = c(
+    2000,
+    2026
+  ),
+  xlab = "Mid year ending",
+  ylab = "Population"
+) +
+  font(
+    "ylab",
+    angle = 0,
+    vjust = 1.02
+  ) +
+  scale_y_continuous(
+    limits = c(
+      1650000,
+      2000000
+    ),
+    labels = scales::label_number(
+      suffix = "m",
+      scale = 1e-6,
+      big.mark = ","
+    )
+  ) +
+  theme(
+    text = element_text(
+      family = "Arial"
+    )
+  ) +
+  theme(
+    axis.title = element_text(
+      size = 11
+    ),
+    axis.text = element_text(
+      size = 10
+    ),
+    # give a bit of room at the left for the slashes if needed
+    plot.margin = margin(
+      5.5,
+      20,
+      5.5,
+      20
+    )
+  ) +
+  geom_text(
+    data = df_annual_pop_tot |>
+      filter(
+        mid_year_ending == latest_year
+      ),
+    aes(
+      label = paste0(
+        latest_year,
+        ": \n",
+        format(
+          ni_pop_total,
+          big.mark = ","
+        )
+      ),
+      x = mid_year_ending + 1.5,
+      y = ni_pop_total
+    )
+  ) +
+  geom_text(
+    data = df_annual_pop_tot |>
+      filter(
+        mid_year_ending == earliest_year
+      ),
+    aes(
+      label = paste0(
+        earliest_year,
+        ": ",
+        format(
+          ni_pop_total,
+          big.mark = ","
+        )
+      ),
+      x = mid_year_ending + 2.5,
+      y = ni_pop_total - 7000
+    )
+  ) +
+  geom_vline(
+    xintercept = 2009,
+    linetype = "dashed",
+    color = nisra_blue
+  ) +
+  annotate(
+    "text",
+    x = 2009.5,
+    y = 1880000,
+    hjust = 0,
+    label = paste(
+      strwrap(
+        "2009: Growth rate starts to slow",
+        width = 18
+      ),
+      collapse = "\n"
+    )
+  ) +
+  # --- Add a “fake” axis-break mark (two slashes) near the left axis ---
+  coord_cartesian(
+    clip = "off"
+  ) +
+  annotate(
+    "text",
+    x = min(
+      df_annual_pop_tot$mid_year_ending
+    ),
+    y = 1.67e6,
+    label = "//",
+    hjust = 2.55, # nudges further left
+    vjust = 0.5,
+    size = 5
+  )
+
+fig1_static
+```
+
+```{r figure1_dl_buttons_static}
+# call make tables function to create chart download buttons
+f_make_tables(
+  data = df_fig1_xls,
+  title = fig1_title,
+  data_style = ns_comma,
+  data_dir = here(
+    "code",
+    "demo",
+    "demo_outputs",
+    "figdata"
+  ),
+  ggplot = TRUE
+)
+```
+
+##### <span class="sr-only">End tabs</span>
+
+Further information on the chart download buttons can be found in
+section [7. Download data](#download-data) of the demo report.
+
+### Multiple lines chart
+This section shows a line chart with more than one line. The lines are easy to
+see because they do not overlap.
+
+#### Features
+* The chart uses good contrast (different shades of the same colour) to
+distinguish between males and females.
+* The legend is placed above the chart.
+* A static chart is used here so it views well on mobile as well as desktop.
+
+Include descriptive text before or after the chart.
+
+
+#### Figure 2: Females outnumber males in total population
+
+##### Northern Ireland mid year population estimate (sex) `r earliest_year` to `r latest_year` 
+
+```{r line_chart_multiple, echo = TRUE, warnings = FALSE, message = FALSE, fig.alt="Figure 2 alt text example. More detail on the trends are included in the text directly above or below the chart, and data can be downloaded using the button below.", out.width="100%"}
+# Create separate dataframe for selected datapoints from main dataframe
+df_mye_selected_years_gender <- df_mye_year_gender |>
+  filter(
+    mid_year_ending %in% c(
+      2001,
+      2012,
+      2022
+    )
+  ) |>
+  # format numbers
+  mutate(
+    label = paste0(
+      mid_year_ending,
+      ": ",
+      round_half_up(
+        mye_pop / 1e6,
+        2
+      ),
+      "m"
+    )
+  )
+
+
+# code to create interpolated points with blank labels along the line of the
+# line plot to cause repulsion of labels from line and avoid overlap - the
+# final df, df_fig2_labs_inter is used in the geom_text_repel statement
+
+df_mye_interp_male <- filter(
+  df_mye_year_gender,
+  gender == "Males"
+)
+
+df_mye_interp_male <- as.data.frame(
+  do.call(
+    cbind,
+    approx(
+      df_mye_interp_male$mid_year_ending,
+      df_mye_interp_male$mye_pop,
+      n = 30
+    )
+  )
+)
+
+df_mye_interp_female <- filter(
+  df_mye_year_gender,
+  gender == "Females"
+)
+
+df_mye_interp_female <- as.data.frame(
+  do.call(
+    cbind,
+    approx(
+      df_mye_interp_female$mid_year_ending,
+      df_mye_interp_female$mye_pop,
+      n = 30
+    )
+  )
+)
+
+df_mye_interp_male$label <- ""
+df_mye_interp_male$Gender <- "Males"
+
+df_mye_interp_male <- df_mye_interp_male |>
+  select(
+    x,
+    Gender,
+    y,
+    label
+  )
+
+colnames(df_mye_interp_male) <- colnames(
+  df_mye_selected_years_gender
+)
+
+df_mye_lab_select_male <- filter(
+  df_mye_selected_years_gender,
+  gender == "Males"
+)
+
+df_mye_interp_male <- rbind(
+  df_mye_lab_select_male,
+  df_mye_interp_male
+)
+
+df_mye_interp_female$label <- ""
+df_mye_interp_female$Gender <- "Females"
+
+df_mye_interp_female <- df_mye_interp_female |>
+  select(
+    x,
+    Gender,
+    y,
+    label
+  )
+
+colnames(df_mye_interp_female) <- colnames(
+  df_mye_selected_years_gender
+)
+
+df_mye_lab_select_female <- filter(
+  df_mye_selected_years_gender,
+  gender == "Females"
+)
+
+df_mye_interp_female <- rbind(
+  df_mye_lab_select_female,
+  df_mye_interp_female
+)
+
+df_fig2_labs_inter <- rbind(
+  df_mye_interp_male,
+  df_mye_interp_female
+)
+
+df_fig2_labs_inter <- arrange(
+  df_fig2_labs_inter,
+  mid_year_ending,
+  gender
+)
+
+
+fig2 <- ggplot(
+  df_mye_year_gender,
+  aes(
+    x = mid_year_ending,
+    y = mye_pop,
+    color = gender
+  )
+) +
+  geom_line(
+    linewidth = 1
+  ) +
+  # ACC: Change to line colours with sufficient contrast
+  scale_color_manual(
+    values = c(
+      nisra_blue,
+      nisra_navy
+    )
+  ) +
+
+  # Using NITotals_lab_select_multiple from above to pick the years that will
+  # have "points", specifying the size of the dots
+  geom_point(
+    data = df_mye_selected_years_gender,
+    aes(
+      x = mid_year_ending,
+      y = mye_pop
+    ),
+    size = 3
+  ) +
+  labs(
+    x = "Year",
+    y = "Population",
+    caption = "Note the non-zero axis"
+  ) +
+  theme_bw() +
+  theme(
+    # removes grid lines from chart
+    panel.grid = element_blank(),
+    # removes chart border top and right
+    panel.border = element_blank(),
+    axis.line.x = element_line(
+      colour = "#000000"
+    ),
+    axis.line.y = element_line(
+      colour = "#000000"
+    ),
+    # ACC: make y axis title horizontal and position it further from y axis line
+    axis.title.y = element_text(
+      angle = 0,
+      vjust = 1,
+      hjust = 0,
+      margin = margin(
+        t = 0,
+        r = 5,
+        b = 0,
+        l = 0
+      )
+    ),
+    # align title and subtitle to left
+    plot.title.position = "plot",
+    # align caption to left
+    plot.caption = element_text(
+      hjust = 0
+    ),
+    # ACC: change all fonts to 12
+    text = element_text(
+      size = 12,
+      family = "Arial"
+    ),
+    # bolds title and subtitle + adds margin below subtitle and plot
+    plot.title = element_text(
+      face = "bold"
+    ),
+    plot.subtitle = element_text(
+      face = "bold",
+      margin = margin(
+        0,
+        0,
+        15,
+        0
+      )
+    ),
+    # ACC: Legend to top and tidy up
+    legend.position = "top",
+    legend.title = element_blank(),
+    legend.text = element_text(
+      size = 12
+    )
+  ) +
+  geom_text_repel(
+    # ACC: show value label for specified years
+    data = df_fig2_labs_inter,
+    aes(
+      x = mid_year_ending,
+      y = mye_pop,
+      label = label
+    ),
+    force = 10
+  ) +
+  # ACC: make x axis labels easier to read by removing every other year
+  scale_x_continuous(
+    breaks = seq(
+      earliest_year,
+      latest_year,
+      by = 2
+    )
+  ) +
+  # add comma to y labels
+  scale_y_continuous(
+    labels = label_number(
+      scale = 1e0,
+      big.mark = ","
+    )
+  ) +
+  # indicate non zero axis
+  labs(
+    tag = "//"
+  ) +
+  theme(
+    plot.tag.position = c(
+      0.203,
+      0.2
+    )
+  )
+
+fig2
+```
+
+```{r figure_2_dl_buttons}
+f_make_tables(
+  data = df_fig2_xls,
+  title = paste0(
+    "Figure 2: Northern Ireland mid year population ",
+    "estimate (gender) ",
+    earliest_year,
+    " to ",
+    latest_year
+  ),
+  data_style = ns_comma,
+  data_dir = here(
+    "code",
+    "demo",
+    "demo_outputs",
+    "figdata"
+  ),
+  ggplot = TRUE
+)
+```
+
+### Multiple single line charts
+
+This section shows a different way to display data that would otherwise have too
+many lines. The Government Analysis Function recommends aiming for no more than
+4 lines.
+
+#### Features
+* These 'small multiples' (sometimes called 'panel charts') are an option for
+more than 4 lines. 
+* The y axis is identical on all charts.
+* This chart is static because it works well on mobiles and when magnified.
+
+You could also highlight one line in colour and make all the other lines grey if
+that shows your message more clearly.
+
+Add clear text before or after the chart to explain the main message.
+
+#### Figure 3: In `r latest_year`, Belfast Local Government District (LGD) has more younger people than other areas
+
+##### Northern Ireland mid year population estimate by LGD in `r latest_year`
+
+```{r line_chart_facet, echo = TRUE, warnings = FALSE, message = FALSE, fig.alt="Figure 3 alt text example. More detail on the trends are included in the text directly above or below the chart, and data can be downloaded using the button below.", out.width="100%"}
+fig3 <- ggplot(
+  df_mye_latest_5yr_age_lgd,
+  aes(
+    x = age_group_5,
+    y = population_latest
+  )
+) +
+  geom_line(
+    linewidth = 1,
+    group = 1,
+    color = nisra_blue
+  ) +
+  # ACC: Specify line colour with sufficient contrast
+  facet_wrap(
+    vars(
+      str_wrap(
+        lgd2014name,
+        30
+      )
+    ),
+    ncol = 3
+  ) +
+  # ACC: Use clear and descriptive labels
+  labs(
+    x = "Age",
+    y = "Population"
+  ) +
+  theme_bw() +
+  theme(
+    # removes grid lines from chart
+    panel.grid = element_blank(),
+    # panel margin
+    panel.spacing.x = unit(
+      0.7,
+      "lines"
+    ),
+    axis.line.x = element_line(
+      colour = "#000000"
+    ),
+    axis.line.y = element_line(
+      colour = "#000000"
+    ),
+    # ACC: make y axis title horizontal and position it further from y axis line
+    axis.title.y = element_text(
+      angle = 1,
+      vjust = 1,
+      hjust = 0,
+      margin = margin(
+        t = 0,
+        r = 5,
+        b = 0,
+        l = 0
+      )
+    ),
+    # ACC: change all fonts to 12
+    text = element_text(
+      size = 12,
+      family = "Arial"
+    ),
+    # facet only legend hide bg
+    legend.title = element_blank(),
+    legend.position = "none",
+    strip.background = element_blank()
+  ) +
+  scale_x_discrete(
+    breaks = c(
+      "0-4",
+      "45-49",
+      "90-94"
+    ),
+    labels = c(
+      "0-4",
+      "45-49",
+      "90+"
+    )
+  ) +
+  # ACC: add comma to y labels
+  scale_y_continuous(
+    labels = label_number(
+      scale = 1e0,
+      big.mark = ","
+    )
+  )
+
+fig3
+```
+
+```{r figure_3_dl_buttons}
+# download buttons
+# download buttons
+f_make_tables(
+  data = df_fig3_xls,
+  title = paste0(
+    "Figure 3: Northern Ireland mid year population estimate by 5 ",
+    "year age groups and LGD in ",
+    latest_year
+  ),
+  data_style = ns_comma,
+  data_dir = here(
+    "code",
+    "demo",
+    "demo_outputs",
+    "figdata"
+  ),
+  ggplot = TRUE
+)
+```
+
+### Bar chart (a-z)
+
+This section presents two versions of a bar chart: a static chart produced using
+ggplot and an interactive chart produced using ggplot and ggplotly. The chart is
+ordered alphabetically by Local Government District (LGD). A bar chart was
+selected to allow the full LGD names to be displayed clearly along the
+horizontal axis. Please note that interactive charts may not show everything
+when zoomed in.
+
+#### Features
+
+* Long council names are displayed in full without wrapping or having text at an
+angle with this orientation of bars.
+
+Include descriptive text before or after the chart.
+
+#### Figure 4: Young people by LGD
+
+##### Data from `r latest_year` mid-year estimates (MYEs) showing the percentage of each LGD population that is under 25
+
+##### <span class="sr-only">Figure 4 tabs</span> {.tabset}
+
+###### Figure 4 static (ggplot)
+
+```{r bar_chart_az, echo = TRUE, warnings = FALSE, message = FALSE, fig.alt="Figure 4 alt text example. More detail on the trends are included in the text directly above or below the chart, and data can be downloaded using the button below.", out.width="100%"}
+# create amended df for chart. Reorder factors for plotting (need lgd names in
+# reverse alphabetical order as coord flip reverses order).
+# Remove unnecessary columns
+fig4_data <- df_mye_latest_year_youthrate |>
+  mutate(
+    lgd2014name = fct_reorder(
+      lgd2014name,
+      desc(lgd2014name)
+    )
+  ) |>
+  select(
+    -under25_pop,
+    -lgd_pop_total
+  )
+
+ggplot(
+  fig4_data,
+  aes(
+    x = lgd2014name,
+    y = youthrate
+  )
+) +
+  geom_bar(
+    fill = nisra_blue,
+    stat = "identity"
+  ) +
+  geom_text(
+    aes(
+      label = youthrate
+    ),
+    hjust = 1.5,
+    colour = "white",
+    fontface = "bold"
+  ) +
+  # adds value labels to the bars, sets text to colour and weight that meet
+  # contrast standards.
+  theme_bw() +
+  # axis labels
+  labs(
+    x = paste(
+      strwrap(
+        "LGD",
+        width = 0.2 * getOption("width")
+      ),
+      collapse = "\n"
+    ),
+    y = "Percentage of population under 25"
+  ) +
+  # makes y axis title horizontal
+  theme(
+    axis.title.y = element_text(
+      angle = 0,
+      vjust = 1,
+      hjust = 1
+    ),
+    # removes grids from chart
+    panel.grid = element_blank(),
+    # added vertical grid at major ticks
+    panel.grid.major.x = element_line(
+      color = "#BEBEBE",
+      linewidth = 0.1
+    ),
+    # removes chart border top and right
+    panel.border = element_blank(),
+    # xaxis line black
+    axis.line.x = element_line(
+      colour = "#000000"
+    ),
+    # yaxis line black
+    axis.line.y = element_line(
+      colour = "#000000"
+    )
+  ) +
+  coord_flip()
+```
+
+###### Figure 4 interactive (ggplotly)
+
+```{r bar_chart_az_ggploty, echo = TRUE, warnings = FALSE, message = FALSE, fig.alt="Figure 4 alt text example. More detail on the trends are included in the text directly above or below the chart, and data can be downloaded using the button below.", out.width="100%"}
+# Create amended data frame for chart.
+# Reorder factors for plotting, as coord_flip() reverses the order.
+# Remove unnecessary columns.
+fig4_data <- df_mye_latest_year_youthrate |>
+  mutate(
+    lgd2014name = fct_reorder(
+      lgd2014name,
+      desc(lgd2014name)
+    )
+  ) |>
+  select(
+    -under25_pop,
+    -lgd_pop_total
+  )
+
+# Create static ggplot
+fig4 <- ggplot(
+  fig4_data,
+  aes(
+    x = lgd2014name,
+    y = youthrate,
+    text = paste0(
+      "<b>",
+      lgd2014name,
+      "</b>",
+      "<br>Percentage of population under 25: ",
+      sprintf(
+        "%.1f",
+        youthrate
+      )
+    )
+  )
+) +
+  geom_bar(
+    fill = nisra_blue,
+    stat = "identity"
+  ) +
+  # Set labels for bars
+  geom_text(
+    aes(
+      label = sprintf(
+        "%.1f",
+        youthrate
+      )
+    ),
+    hjust = 0.9,
+    colour = "white",
+    fontface = "bold"
+  ) +
+  theme_bw() +
+  labs(
+    x = paste(
+      strwrap(
+        "LGD",
+        width = 0.2 * getOption("width")
+      ),
+      collapse = "\n"
+    ),
+    y = "Percentage of population under 25"
+  ) +
+  theme(
+    axis.title.y = element_text(
+      angle = 0,
+      vjust = 1,
+      hjust = 0
+    ),
+    panel.grid = element_blank(),
+    panel.grid.major.x = element_line(
+      colour = "#BEBEBE",
+      linewidth = 0.1
+    ),
+    panel.border = element_blank(),
+    axis.line.x = element_line(
+      colour = "#000000"
+    ),
+    axis.line.y = element_line(
+      colour = "#000000"
+    )
+  ) +
+  coord_flip()
+
+# Convert to interactive plotly chart
+fig4_interactive <- ggplotly(
+  fig4,
+  tooltip = "text"
+) |>
+  layout(
+    yaxis = list(
+      title = ""
+    ),
+    # Creates an annotation for the 'LGD' y axis label
+    annotations = list(
+      list(
+        x = -0.1,
+        y = 1.01,
+        xref = "paper",
+        yref = "paper",
+        text = "<b>LGD</b>",
+        showarrow = FALSE,
+        xanchor = "right",
+        yanchor = "bottom",
+        font = list(
+          size = 12
+        )
+      )
+    ),
+    margin = list(
+      l = 180,
+      r = 30,
+      t = 40,
+      b = 40
+    ),
+    hoverlabel = list(
+      align = "left"
+    )
+  ) |>
+  config(
+    displayModeBar = FALSE
+  )
+
+# Move the value labels inside the bars
+fig4_interactive$x$data[[2]]$x <-
+  fig4_interactive$x$data[[2]]$x - 2
+
+fig4_interactive <- htmlwidgets::onRender(
+  fig4_interactive,
+  "
+  function(el, x) {
+    window.fig4_chart = el;
+  }
+  "
+)
+
+fig4_interactive
+```
+
+##### <span class="sr-only">End tabs</span>
+
+```{r figure_4_dl_buttons}
+# download buttons
+f_make_tables(
+  data = df_fig4_5_xls,
+  title = "Figure 4: Percentage of young people by LGD",
+  data_style = ns_percentage,
+  data_dir = here(
+    "code",
+    "demo",
+    "demo_outputs",
+    "figdata"
+  ),
+  plotly_id = "fig4_chart"
+)
+```
+
+The chart shows that the LGD with the greatest percentage of population less
+than 25 is Mid Ulster. Ards and North Down is the LGD with the smallest
+percentage.
+
+### Interactive bar chart using plotly
+This bar chart is created using the same data but using plotly to create an
+interactive html chart. When resized for mobile the bars shorten but the labels
+remain a more readable size. Keep the x axis title short so it won't get cut off
+on a smaller display.
+
+Include descriptive text before or after the chart highlighting the key message.
+
+#### Figure 5: Proportion of under 25s was higher in `r earliest_year`.
+
+##### Percentage of population aged under 25 by LGD, `r earliest_year` MYEs
+
+Dashed line represents Northern Ireland mean.
+
+```{r bar_chart_interactive, echo = TRUE, warnings = FALSE, message = FALSE, fig.alt="Figure 5 alt text example. More detail on the trends are included in the text directly above or below the chart, and data can be downloaded using the button below.", out.width="100%"}
+# create annotation for y axis title so it can be horizontal.
+yaxistitle <- list(
+  x = -0.1,
+  y = 1.01, # position of y axis title
+  text = "LGD", # title
+  showarrow = FALSE,
+  xref = "paper",
+  yref = "paper",
+  xanchor = "center",
+  yanchor = "middle", # alignment
+  xshift = 0,
+  yshift = 0,
+  font = list(
+    family = "Arial Black",
+    size = 14,
+    color = "black"
+  )
+)
+
+fig5 <- plot_ly(
+  df_mye_earliest_youthrate,
+  x = ~earliest_youthrate,
+  y = ~lgd2014name,
+  type = "bar",
+  orientation = "h", # horizontal bars. Default is vertical
+  hoverinfo = "text",
+  # adds value labels to the bars and sets hover text
+  text = ~earliest_youthrate,
+  textposition = "auto",
+  # sets colour of bars to navy
+  marker = list(
+    color = nisra_navy
+  )
+) |>
+  layout(
+    # add annotation
+    font = list(
+      family = "Arial",
+      size = 14
+    ),
+    annotations = list(
+      yaxistitle
+    ),
+    shapes = list(
+      vline(
+        ~ mean(earliest_youthrate),
+        color = nisra_blue
+      )
+    ),
+    xaxis = list(
+      title = "Under 25s (%)"
+    ),
+    yaxis = list(
+      title = "",
+      ticks = "outside",
+      tickcolor = "#ffffff",
+      ticklen = 10,
+      categoryorder = "category descending"
+    )
+  ) |>
+  f_responsive_annotations()
+
+# displays lgds in alphabetic order
+# modebar is series of icons and plotly logo linked to plotly site. Turned off
+# throughout to avoid multiple links going to same destination (poor
+# accessibility) and icons can create visual clutter.
+
+fig5 <- fig5 |>
+  config(
+    displayModeBar = FALSE,
+    displaylogo = FALSE
+  )
+
+fig5 <- htmlwidgets::onRender(
+  fig5,
+  "
+  function(el, x) {
+    window.fig5_chart = el;
+  }
+  "
+)
+
+fig5
+```
+
+```{r figure_5_dl_buttons}
+# download buttons
+f_make_tables(
+  df_fig4_5_xls,
+  title = paste0(
+    "Figure 5: Percentage of under 25s by LGD (",
+    latest_year,
+    ")"
+  ),
+  data_dir = here(
+    "code",
+    "demo",
+    "demo_outputs",
+    "figdata"
+  ),
+  plotly_id = "fig5_chart"
+)
+```
+
+The chart shows that LGD with the greatest percentage of population under 25 in
+`r earliest_year` was Derry City and Strabane. Ards and North Down was the LGD
+with the smallest percentage.
+
+### Column chart 
+
+This section includes two versions of a column chart (one static, one
+interactive) and two stacked bar charts.
+
+#### Features
+
+* The contrasting shades of blue make it easy to differentiate between male and
+female.
+* Data labels have been added.
+* The order of the legend is the same as the column order.
+* The plotly x axis labels are short and don't overlap when resized.
+* The plotly data labels will change to vertical on mobile which is not ideal
+but the hover labels will be horizontal and legible.
+* The plotly stacked bar age group labels are short and resize well on mobile.
+* The horizontal stacked bar resizes well because there are only 2 groups. If
+there were many more a static chart would likely be more appropriate.
+
+Include descriptive text before or after the chart.
+
+#### Figure 6: Females outnumber males in all age groups except the under 25s
+
+##### Northern Ireland population in `r latest_year` by age group
+
+##### <span class="sr-only">Figure 6 tabs</span> {.tabset}
+
+###### ggplot static 
+
+```{r column_chart, echo = TRUE, warnings = FALSE, message = FALSE, fig.alt="Figure 6 alt text example. More detail on the trends are included in the text directly above or below the chart, and data can be downloaded using the button below.", out.width="100%"}
+fig6_static <- ggplot(
+  df_mye_latest_year_agegrp_gend,
+  aes(
+    x = age_group,
+    y = pop_total,
+    fill = gender
+  )
+) +
+  geom_col(
+    position = position_dodge()
+  ) +
+  # colour bars that meet contrast for adjacent colours
+  scale_fill_manual(
+    values = c(
+      nisra_navy,
+      nisra_blue
+    )
+  ) +
+  # add value labels, and add thousand separator
+  geom_text(
+    aes(
+      label = prettyNum(
+        pop_total,
+        big.mark = ","
+      )
+    ),
+    position = position_dodge(
+      width = 1
+    ),
+    vjust = 1.1,
+    colour = "white",
+    size = 3.2
+  ) +
+  theme_bw() +
+  # axis labels
+  labs(
+    x = "Age group",
+    y = "Population",
+    fill = "Gender"
+  ) +
+  theme(
+    axis.title.y = element_text(
+      # makes y axis title horizontal
+      angle = 0,
+      vjust = 1.05,
+      hjust = 1
+    ),
+    # removes grids from chart
+    panel.grid = element_blank(),
+    # added horizontal grid at major ticks
+    panel.grid.major.y = element_line(
+      color = "#BEBEBE",
+      linewidth = 0.1
+    ),
+    # removes chart border top and right
+    panel.border = element_blank(),
+    # xaxis line black
+    axis.line.x = element_line(
+      colour = "#000000"
+    ),
+    # yaxis line black
+    axis.line.y = element_line(
+      colour = "#000000"
+    ),
+    legend.position = "top"
+  ) +
+  # add thousand separator to y axis labels
+  scale_y_continuous(
+    labels = label_number(
+      scale = 1e0,
+      big.mark = ","
+    )
+  )
+
+fig6_static
+```
+
+```{r fig6_static_download}
+f_make_tables(
+  df_fig6_xls,
+  title = paste0(
+    "Figure 6 Static: LGD populations by sex and age group (",
+    latest_year,
+    ")"
+  ),
+  data_dir = here(
+    "code",
+    "demo",
+    "demo_outputs",
+    "figdata"
+  ),
+  ggplot = TRUE
+)
+```
+
+###### plotly 
+
+```{r figure_6b,  echo = TRUE, fig.alt="Figure 6b alt text example. More detail on the trends are included in the text directly above or below the chart, and data can be downloaded using the button below", out.width="100%"}
+fig6_grouped <- pivot_wider(
+  df_mye_latest_year_agegrp_gend,
+  names_from = gender,
+  values_from = pop_total
+)
+
+fig6_grouped <- as.data.frame(
+  fig6_grouped
+)
+
+fig6_grouped <- pivot_longer(
+  fig6_grouped,
+  cols = c(
+    Females,
+    Males
+  ),
+  names_to = "variable",
+  values_to = "value"
+)
+
+nisra_blue <- "#3878c5"
+nisra_navy <- "#00205b"
+
+colormap <- setNames(
+  object = c(
+    "#00205b",
+    "#3878c5"
+  ),
+  nm = unique(
+    fig6_grouped$variable
+  )
+)
+
+fig6_grouped <- fig6_grouped |>
+  mutate(
+    variable = factor(
+      variable,
+      levels = c(
+        "Females",
+        "Males"
+      )
+    )
+  ) |>
+  plotly::plot_ly(
+    x = ~age_group,
+    y = ~value,
+    color = ~variable,
+    colors = colormap,
+    type = "bar",
+    text = format(
+      fig6_grouped$value,
+      big.mark = ","
+    ),
+    textposition = "inside",
+    textangle = "horizontal", # for accessibility
+    insidetextfont = list(
+      size = 12
+    ), # to fit
+    hovertemplate = "%{text}", # hover text = text
+    textfont = list(
+      color = "white"
+    )
+  ) |>
+  layout(
+    # makes it a clustered bar
+    barmode = "group",
+    font = list(
+      family = "Arial",
+      size = 14
+    ),
+    xaxis = list(
+      title = "Age group"
+    ),
+    yaxis = list(
+      title = "",
+      tickformat = ",d",
+      showgrid = FALSE
+    ),
+    legend = list(
+      orientation = "h",
+      xanchor = "center",
+      x = 0.5,
+      y = 1.1,
+      # so order is same as legend
+      traceorder = "normal"
+    ),
+    annotations = list(
+      list(
+        text = "Population",
+        x = -0.03,
+        xref = "paper",
+        xanchor = "center",
+        y = 1.02,
+        yref = "paper",
+        yanchor = "bottom",
+        showarrow = FALSE,
+        font = list(
+          size = 16
+        )
+      )
+    )
+  ) |>
+  # modebar is series of icons and plotly logo linked to plotly site. Turned off
+  # throughout to avoid multiple links going to same destination (poor
+  # accessibility) and icons can create visual clutter.
+  config(
+    displayModeBar = FALSE
+  )
+
+fig6_grouped <- htmlwidgets::onRender(
+  fig6_grouped,
+  "
+  function(el, x) {
+    window.fig6_grouped_chart = el;
+  }
+  "
+)
+
+fig6_grouped
+```
+
+```{r fig6_grouped_download}
+f_make_tables(
+  df_fig6_xls,
+  title = paste0(
+    "Figure 6 Grouped: LGD populations by sex and age group (",
+    latest_year,
+    ")"
+  ),
+  data_dir = here(
+    "code",
+    "demo",
+    "demo_outputs",
+    "figdata"
+  ),
+  plotly_id = "fig6_grouped_chart"
+)
+```
+
+
+###### Stacked bar 
+
+```{r figure_6c, echo = TRUE, fig.alt="Figure 6e alt text example. More detail on the trends are included in the text directly above or below the chart, and data can be downloaded using the button below", out.width="100%"}
+fig6_grouped <- pivot_wider(
+  df_mye_latest_year_agegrp_gend,
+  names_from = gender,
+  values_from = pop_total
+)
+
+fig6_grouped <- as.data.frame(
+  fig6_grouped
+)
+
+fig6_grouped <- pivot_longer(
+  fig6_grouped,
+  cols = c(
+    Females,
+    Males
+  ),
+  names_to = "variable",
+  values_to = "value"
+)
+
+fig6_stacked <- fig6_grouped |>
+  mutate(
+    variable = factor(
+      variable,
+      levels = c(
+        "Females",
+        "Males"
+      )
+    )
+  ) |>
+  plotly::plot_ly(
+    x = ~age_group,
+    y = ~value,
+    color = ~variable,
+    colors = colormap,
+    type = "bar",
+    text = format(
+      fig6_grouped$value,
+      big.mark = ","
+    ),
+    textposition = "inside",
+    textangle = "horizontal", # for accessibility
+    insidetextfont = list(
+      size = 12
+    ), # to fit
+    hovertemplate = "%{text}", # hover text = text
+    textfont = list(
+      color = "white"
+    )
+  ) |>
+  layout(
+    # stacked rather than clustered/grouped
+    barmode = "stack",
+    font = list(
+      family = "Arial",
+      size = 14
+    ),
+    xaxis = list(
+      title = "Age group"
+    ),
+    yaxis = list(
+      title = "",
+      tickformat = ",d",
+      showgrid = FALSE
+    ),
+    legend = list(
+      orientation = "h",
+      xanchor = "center",
+      x = 0.5,
+      y = 1.1,
+      font = list(
+        family = "Arial",
+        size = 14
+      ),
+      traceorder = "normal"
+    ),
+    annotations = list(
+      list(
+        text = "Population",
+        x = -0.03,
+        xref = "paper",
+        xanchor = "center",
+        y = 1.02,
+        yref = "paper",
+        yanchor = "bottom",
+        showarrow = FALSE,
+        font = list(
+          size = 16
+        )
+      )
+    )
+  )
+
+# modebar is series of icons and plotly logo linked to plotly site. Turned off
+# throughout to avoid multiple links going to same destination (poor
+# accessibility) and icons can create visual clutter.
+fig6_stacked <- config(
+  fig6_stacked,
+  displayModeBar = FALSE
+)
+
+fig6_stacked <- htmlwidgets::onRender(
+  fig6_stacked,
+  "
+  function(el, x) {
+    window.fig6_stacked_chart = el;
+  }
+  "
+)
+
+fig6_stacked
+```
+
+```{r fig6_stacked_download}
+f_make_tables(
+  df_fig6_xls,
+  title = paste0(
+    "Figure 6 Stacked: LGD populations by sex and age group (",
+    latest_year,
+    ")"
+  ),
+  data_dir = here(
+    "code",
+    "demo",
+    "demo_outputs",
+    "figdata"
+  ),
+  plotly_id = "fig6_stacked_chart"
+)
+```
+
+###### Stacked horizontal bar (%) 
+
+```{r figure_6d, echo = TRUE, fig.alt="Figure 6d alt text example. More detail on the trends are included in the text directly above or below the chart, and data can be downloaded using the button below", out.width="100%"}
+# for stacked horizontal bar set orientation to "h" (horizontal)
+# and barmode to stack
+fig6_horizontal <- plot_ly(
+  df_latest_year_agegrp_gend_pct,
+  x = ~Females,
+  y = ~age_group,
+  marker = list(
+    color = nisra_navy
+  ),
+  type = "bar",
+  orientation = "h",
+  name = "Females",
+  text = ~ paste0(
+    format(
+      round_half_up(
+        Females,
+        1
+      ),
+      nsmall = 1
+    ),
+    "%"
+  ),
+  # use excel rounding function, display to 1dp
+  insidetextanchor = "middle",
+  hoverinfo = "y+text"
+) |>
+  add_trace(
+    x = ~Males,
+    y = ~age_group,
+    orientation = "h",
+    marker = list(
+      color = nisra_blue
+    ),
+    name = "Males",
+    text = ~ paste0(
+      format(
+        round_half_up(
+          Males,
+          1
+        ),
+        nsmall = 1
+      ),
+      "%"
+    )
+  ) |>
+  layout(
+    barmode = "stack",
+    font = list(
+      family = "Arial",
+      size = 14
+    ),
+    yaxis = list(
+      title = "",
+      ticks = "outside",
+      tickcolor = "#ffffff",
+      ticklen = 5,
+      # default was 65+ at top
+      autorange = "reversed"
+    ),
+    xaxis = list(
+      title = "Percentage (%)"
+    ),
+    legend = list(
+      orientation = "h",
+      xanchor = "center",
+      x = 0.42,
+      y = 1.1,
+      traceorder = "normal"
+    ),
+    annotations = list(
+      list(
+        text = "Age group",
+        x = 0,
+        xref = "paper",
+        xanchor = "center",
+        y = 1.02,
+        yref = "paper",
+        yanchor = "bottom",
+        showarrow = FALSE,
+        font = list(
+          size = 16
+        )
+      )
+    )
+  )
+
+# ensure legend is same order as stacks
+# modebar is series of icons and plotly logo linked to plotly site. Turned off
+# throughout to avoid multiple links going to same destination (poor
+# accessibility) and icons can create visual clutter.
+fig6_horizontal <- config(
+  fig6_horizontal,
+  displayModeBar = FALSE
+)
+
+fig6_horizontal <- htmlwidgets::onRender(
+  fig6_horizontal,
+  "
+  function(el, x) {
+    window.fig6_horizontal_chart = el;
+  }
+  "
+)
+
+fig6_horizontal
+```
+
+```{r fig6_horizontal_download}
+f_make_tables(
+  df_fig6_xls,
+  title = paste0(
+    "Figure 6 Horizontal: LGD populations by sex and age group (",
+    latest_year,
+    ")"
+  ),
+  data_dir = here(
+    "code",
+    "demo",
+    "demo_outputs",
+    "figdata"
+  ),
+  plotly_id = "fig6_horizontal_chart"
+)
+```
+
+##### <span class="sr-only">End tabs</span>
+
+
+### Column chart 5 categories
+
+This chart has been included to show how the 5 colour palette can be used for
+categorical data. 
+
+#### Features
+* The colours are used in order to ensure sufficient contrast between adjacent
+bars.
+* The text labels are black or white as appropriate against the background
+colour.
+* These colours can be used for fewer categories as long as the order is
+retained.
+
+#### Figure 7: Over 85s remain the smallest age group
+
+##### Northern Ireland population in 2022 in 5 age bands
+
+```{r figure_7, echo = TRUE, fig.alt="Figure 7 alt text example. More detail on the trends are included in the text directly above or below the chart, and data can be downloaded using the button below", out.width="100%"}
+yaxistitle <- list(
+  text = "Population",
+  x = 0.01,
+  y = 1.05,
+  xref = "paper",
+  yref = "paper",
+  xanchor = "right",
+  yanchor = "top",
+  showarrow = FALSE,
+  font = list(
+    size = 14
+  )
+)
+
+fig7 <- plot_ly(
+  df_mye_latest_5_agegroups,
+  x = ~age_grp_5,
+  y = ~agegroup_total,
+  type = "bar",
+  marker = list(
+    color = c(
+      nisra_blue,
+      nisra_navy,
+      nisra_col3_green,
+      nisra_col4_purple,
+      nisra_col5_lilac
+    )
+  ),
+  # order of colours is important: need medium and
+  # dark colours beside one another
+  text = ~ format(
+    agegroup_total,
+    big.mark = ","
+  ),
+  textfont = list(
+    color = c(
+      "white",
+      "white",
+      "black",
+      "white",
+      "black"
+    )
+  ),
+  # need to specify black or white labels. plotly default
+  # is grey and fails contrast required
+  textangle = "horizontal",
+  hovertemplate = ~ paste0(
+    age_group,
+    ": ",
+    format(
+      agegroup_total,
+      big.mark = ","
+    ),
+    "<extra></extra>"
+  ),
+  hoverlabel = list(
+    font = list(
+      color = c(
+        "white",
+        "white",
+        "black",
+        "white",
+        "black"
+      )
+    )
+  )
+) |>
+  layout(
+    yaxis = list(
+      title = "",
+      tickformat = ",d"
+    ), # adds thousand separator
+    xaxis = list(
+      title = "Age group"
+    ),
+    annotations = list(
+      yaxistitle
+    )
+  )
+
+# modebar is series of icons and plotly logo linked to plotly site. Turned off
+# throughout to avoid multiple links going to same destination (poor
+# accessibility) and icons can create visual clutter.
+fig7 <- fig7 |>
+  config(
+    displayModeBar = FALSE
+  )
+
+fig7 <- htmlwidgets::onRender(
+  fig7,
+  "
+  function(el, x) {
+    window.fig7_chart = el;
+  }
+  "
+)
+
+fig7
+```
+
+```{r figure_7_dl_buttons}
+f_make_tables(
+  df_fig7_xls,
+  title = paste0(
+    "Figure 7: Northern Ireland population by 5 age bands, ",
+    latest_year
+  ),
+  data_style = ns_comma,
+  data_dir = here(
+    "code",
+    "demo",
+    "demo_outputs",
+    "figdata"
+  ),
+  plotly_id = "fig7_chart"
+)
+```
+
+### Pie chart
+
+Good practice is to only use pie charts with 5 categories or fewer. 
+
+#### Features
+
+* Category labels are added to avoid using a legend.
+* Value labels have been added on segments so that users do not have to estimate
+relative sizes.
+* These pie charts are in two columns so that when resized for mobile they will
+wrap one under the other and remain readable. 
+
+Include descriptive text before or after the chart.
+
+#### Figure 8: Higher percentage of females than males in the over 65 age group in NI
+
+##### Percentage of Northern Ireland population aged 65 plus by sex, `r latest_year`
+
+```{r pie_chart, echo = TRUE, fig.alt="Figure 8 alt text example. More detail on the trends are included in the text directly above or below the chart, and data can be downloaded using the button below"}
+fig8a <- plot_ly(
+  df_mye_latest_over_under_65,
+  labels = ~age_65split,
+  values = ~Females,
+  type = "pie",
+  # create better punctuated labels for screen readers,
+  # default value failed accessibility audit
+  text = ~ paste0(
+    age_65split,
+    " \n (",
+    round_half_up(
+      Females / sum(Females) * 100,
+      1
+    ),
+    "%)"
+  ),
+  # increase label size
+  insidetextfont = list(
+    size = 16
+  ),
+  insidetextorientation = "horizontal",
+  textinfo = "text",
+  hoverinfo = "text",
+  # hover font colour for contrast
+  hoverlabel = list(
+    font = list(
+      color = c(
+        "black",
+        "white"
+      )
+    )
+  ),
+  marker = list(
+    colors = c(
+      nisra_col3_green,
+      nisra_navy
+    )
+  ),
+  textfont = list(
+    color = c(
+      "black",
+      "white"
+    )
+  ),
+  showlegend = FALSE
+) |>
+  # modebar is series of icons and plotly logo linked to plotly site. Turned off
+  # throughout to avoid multiple links going to same destination (poor
+  # accessibility) and icons can create visual clutter.
+  config(
+    displayModeBar = FALSE
+  ) |>
+  layout(
+    annotations = list(
+      x = 0.5,
+      y = 1.08,
+      xanchor = "center",
+      text = "<b> Females </b>",
+      showarrow = FALSE,
+      font = list(
+        family = "Arial",
+        size = 16
+      )
+    ),
+    font = list(
+      family = "Arial",
+      size = 14
+    )
+  )
+
+fig8a <- htmlwidgets::onRender(
+  fig8a,
+  "
+  function(el, x) {
+    window.fig8_female_chart = el;
+  }
+  "
+)
+
+fig8b <- plot_ly(
+  df_mye_latest_over_under_65,
+  labels = ~age_65split,
+  values = ~Males,
+  type = "pie",
+  text = ~ paste0(
+    age_65split,
+    " \n (",
+    round_half_up(
+      Males / sum(Males) * 100,
+      1
+    ),
+    "%)"
+  ),
+  textinfo = "text",
+  hoverinfo = "text",
+  # increase label size
+  insidetextfont = list(
+    size = 16
+  ),
+  insidetextorientation = "horizontal",
+  marker = list(
+    colors = c(
+      nisra_col3_green,
+      nisra_navy
+    )
+  ),
+  # plotly default is grey which is insufficient contrast
+  textfont = list(
+    color = c(
+      "black",
+      "white"
+    )
+  ),
+  showlegend = FALSE
+) |>
+  # modebar is series of icons and plotly logo linked to plotly site. Turned off
+  # throughout to avoid multiple links going to same destination (poor
+  # accessibility) and icons can create visual clutter.
+  config(
+    displayModeBar = FALSE
+  ) |>
+  layout(
+    annotations = list(
+      x = 0.5,
+      y = 1.08,
+      xanchor = "center",
+      text = "<b> Males </b>",
+      showarrow = FALSE,
+      font = list(
+        family = "Arial",
+        size = 16
+      )
+    ),
+    font = list(
+      family = "Arial",
+      size = 14
+    )
+  )
+
+fig8b <- htmlwidgets::onRender(
+  fig8b,
+  "
+  function(el, x) {
+    window.fig8_male_chart = el;
+  }
+  "
+)
+
+# creates a two column div placing a chart in each. Usual plotly method of
+# creating a row with 2 columns did not resize well. This way, the pies display
+# one below the other when viewed on mobile.
+div(
+  class = "row",
+  div(
+    class = "col-sm-6",
+    style = "margin-top: 10px;",
+    fig8a
+  ),
+  div(
+    class = "col-sm-6",
+    fig8b
+  )
+)
+```
+
+```{r figure_8_dl_buttons}
+f_make_tables(
+  df_mye_latest_over_under_65,
+  title = paste0(
+    "Figure 8: Northern Ireland population under 65 and 65 plus by sex ",
+    latest_year
+  ),
+  data_style = ns_comma,
+  data_dir = here(
+    "code",
+    "demo",
+    "demo_outputs",
+    "figdata"
+  ),
+  plotly_ids = c(
+    "Female Pie" = "fig8_female_chart",
+    "Male Pie" = "fig8_male_chart"
+  )
+)
+```
+
+### Treemap - basic
+
+#### Features
+
+* Added category labels to avoid using a legend.
+* Added value labels to help users read the chart.
+* Text colours have sufficient contrast against background colours.
+* White space between segments acts as a border which means the segments stand
+out from one another (this meets minimum contrast).
+* Without the white space, the blue and green for example would be harder to
+distinguish.
+
+Include descriptive text before or after the chart.
+
+#### Figure 9: Females aged 0-24 make up the largest age group in NI.
+
+##### Female population of Northern Ireland by age group, `r latest_year`
+
+```{r treemap, echo = TRUE, warnings = FALSE, message = FALSE, fig.alt="Figure 9 alt text example. More detail on the trends are included in the text directly above or below the chart, and data can be downloaded using the button below", out.width="100%"}
+fig9 <- plot_ly(
+  df_fig9,
+  type = "treemap",
+  labels = ~age_grp_5,
+  parents = ~gender,
+  values = ~pop_total,
+  # punctuated labels so that readers do not rely solely on colour
+  # or shape to understand the chart and screen readers vocalise ok
+  text = ~ paste0(
+    "Age ",
+    age_grp_5,
+    ":",
+    "\n",
+    format(
+      pop_total,
+      big.mark = ","
+    )
+  ),
+  textinfo = "text",
+  hoverinfo = "text",
+  hoverlabel = list(
+    font = list(
+      color = c(
+        "white",
+        "white",
+        "black",
+        "white",
+        "black"
+      )
+    )
+  ),
+  branchvalues = "total",
+  # set tile colours, border and label colours to meet accessibility standards
+  marker = list(
+    colors = c(
+      nisra_blue,
+      nisra_navy,
+      nisra_col3_green,
+      nisra_col4_purple,
+      nisra_col5_lilac
+    ),
+    line = list(
+      color = "black",
+      width = 1
+    )
+  ),
+  textfont = list(
+    family = "Arial",
+    size = 16,
+    color = c(
+      "white",
+      "white",
+      "black",
+      "white",
+      "black"
+    )
+  )
+)
+
+# modebar is series of icons and plotly logo linked to plotly site. Turned off
+# throughout to avoid multiple links going to same destination (poor
+# accessibility) and icons can create visual clutter.
+fig9 <- fig9 |>
+  config(
+    displayModeBar = FALSE
+  )
+
+fig9 <- htmlwidgets::onRender(
+  fig9,
+  "
+  function(el, x) {
+    window.fig9_chart = el;
+  }
+  "
+)
+
+fig9
+```
+
+```{r figure_9_dl_buttons}
+f_make_tables(
+  df_fig9_xls,
+  title = paste0(
+    "Figure 9: Female population of Northern Ireland by age group, ",
+    latest_year
+  ),
+  data_style = ns_comma,
+  data_dir = here(
+    "code",
+    "demo",
+    "demo_outputs",
+    "figdata"
+  ),
+  plotly_id = "fig9_chart"
+)
+```
+  
+### Treemap - nested (3 levels)
+
+This example shows a treemap with lots of boxes and groups. The tree map
+(Figure 3) from the Economic and Labour Market Statistics report
+[Structure and Performance of the Northern Ireland Economy 2018 and 2019](https://datavis.nisra.gov.uk/economy-and-labour-market/structure-of-the-ni-economy-2019.html)
+is shown below. 
+
+#### Figure 10: Split of Northern Ireland GVA by industry, `r df_sut_report_data$Value[1]` 
+
+##### `r highest_gva_industry` accounted for the largest share of GVA
+
+##### <span class="sr-only">Figure 10 tabs</span> {.tabset}
+
+To view the sub-industries in more detail by industry, click on the industry
+header at the top of each box. To reset the chart, click on the industry header
+again to get back to the original view.
+
+###### `r df_sut_report_data$Value[1]`
+
+```{r figure_10, out.width="100%", echo = TRUE}
+tmap_textcolours[1] <- "black"
+
+fig10 <- plot_ly(
+  type = "treemap",
+  labels = ~tmap_labels_9,
+  parents = ~tmap_parents_9,
+  values = ~tmap_values_9,
+  textinfo = "label",
+  text = ~ paste0(
+    tmap_labels_9,
+    "\n",
+    round_half_up(
+      tmap_values_9_lab,
+      1
+    ),
+    "%"
+  ),
+  hoverinfo = "text",
+
+  # ⬇️ put per-tile hover colours HERE (trace-level)
+  hoverlabel = list(
+    font = list(
+      color = tmap_textcolours
+    )
+  ),
+  marker = list(
+    colors = c(
+      "white",
+      nisra_green_decoration,
+      nisra_navy,
+      nisra_col9_pink,
+      nisra_col3_green,
+      nisra_col4_purple,
+      nisra_col5_lilac,
+      nisra_col6_olive,
+      nisra_col8_slate,
+      nisra_blue,
+      nisra_col10_burgandy
+    )
+  ),
+  textfont = list(
+    color = tmap_textcolours
+  )
+) |>
+  layout(
+    # leave layout.hoverlabel without color (size/bg ok if you want)
+    hoverlabel = list(
+      font = list(
+        size = 20
+      )
+    ),
+    font = list(
+      family = "Arial",
+      size = 14
+    ),
+    margin = list(
+      l = 0,
+      r = 0,
+      b = 12,
+      t = 0
+    )
+  ) |>
+  config(
+    displayModeBar = FALSE
+  )
+
+fig10 <- htmlwidgets::onRender(
+  fig10,
+  "
+  function(el, x) {
+    window.fig10_chart = el;
+  }
+  "
+)
+
+fig10
+```
+
+```{r figure_10_dl_buttons}
+f_make_tables(
+  data = fig9_dl,
+  title = paste0(
+    "Figure 10: Split of Northern Ireland GVA by industry, ",
+    df_sut_report_data$Value[1]
+  ),
+  data_style = ns_percentage,
+  data_dir = here(
+    "code",
+    "demo",
+    "demo_outputs",
+    "figdata"
+  ),
+  plotly_id = "fig10_chart"
+)
+```
+
+###### `r df_sut_report_data$Value[2]`
+
+```{r figure_10_prev, out.width="100%", echo = TRUE}
+fig10prev <- plot_ly(
+  type = "treemap",
+  labels = ~tmap_labels_9prev,
+  parents = ~tmap_parents_9prev,
+  values = ~tmap_values_9prev,
+  textinfo = "label",
+  text = ~ paste0(
+    tmap_labels_9prev,
+    "\n",
+    round_half_up(
+      tmap_values_9prev_lab,
+      1
+    ),
+    "%"
+  ),
+  hoverinfo = "text",
+  # ⬇️ put per-tile hover colours HERE (trace-level)
+  hoverlabel = list(
+    font = list(
+      color = tmap_textcolours
+    )
+  ),
+  marker = list(
+    colors = c(
+      "white",
+      nisra_green_decoration,
+      nisra_navy,
+      nisra_col9_pink,
+      nisra_col3_green,
+      nisra_col4_purple,
+      nisra_col5_lilac,
+      nisra_col6_olive,
+      nisra_col8_slate,
+      nisra_blue,
+      nisra_col10_burgandy
+    )
+  ),
+  textfont = list(
+    color = tmap_textcolours
+  )
+) |>
+  layout(
+    hoverlabel = list(
+      font = list(
+        size = 20
+      )
+    ),
+    font = list(
+      family = "Arial",
+      size = 14
+    ),
+    margin = list(
+      l = 0,
+      r = 0,
+      b = 12,
+      t = 0
+    )
+  ) |>
+  # modebar is series of icons and plotly logo linked to plotly site. Turned off
+  # throughout to avoid multiple links going to same destination (poor
+  # accessibility) and icons can create visual clutter.
+  config(
+    displayModeBar = FALSE
+  )
+
+fig10prev <- htmlwidgets::onRender(
+  fig10prev,
+  "
+  function(el, x) {
+    window.fig10prev_chart = el;
+  }
+  "
+)
+
+fig10prev
+```
+
+```{r figure_10_prev_dl_buttons}
+f_make_tables(
+  data = fig9prev_dl,
+  title = paste0(
+    "Figure 10: Split of Northern Ireland GVA by industry, ",
+    df_sut_report_data$Value[2]
+  ),
+  data_style = ns_percentage,
+  data_dir = here(
+    "code",
+    "demo",
+    "demo_outputs",
+    "figdata"
+  ),
+  plotly_id = "fig10prev_chart"
+)
+```
+
+##### <span class="sr-only">End tabs</span>
+
+### Donut chart
+
+As with pie charts, donut charts should only have 5 categories or fewer. 
+
+#### Features
+
+* The colours are used in the correct order to preserve contrast.
+* Segment labels mean there is no need for a legend.
+* Text colour of the labels has been set manually to ensure they stand out
+(plotly default  does not).
+* Labels are short and concise so they remain visible when resized.
+
+#### Figure 11: Under 25s largest age group in Northern Ireland 
+
+##### Northern Ireland population by age group `r latest_year` 
+
+```{r figure_11 donut, echo = TRUE, warnings = FALSE, message = FALSE, fig.alt="Figure 11 alt text example. More detail on the trends are included in the text directly above or below the chart, and data can be downloaded using the button below", out.width="100%"}
+fig11 <- plot_ly(
+  df_mye_latest_year_agegroup,
+  type = "pie",
+  labels = ~age_group,
+  values = ~agegroup_total,
+  # default orders segments by size
+  sort = FALSE,
+  # accompanies sort argument
+  direction = "clockwise",
+  # turns pie into donut
+  hole = 0.5,
+  # create labels with age group and percentage values in brackets
+  text = ~ paste0(
+    age_group,
+    ": \n (",
+    round_half_up(
+      agegroup_total / sum(agegroup_total) * 100,
+      1
+    ),
+    "%)"
+  ),
+  hoverinfo = "text",
+  textinfo = "text",
+  # keeps labels horizontal
+  insidetextorientation = "horizontal",
+  # specify colours in correct order.
+  marker = list(
+    colors = c(
+      nisra_blue,
+      nisra_navy,
+      nisra_col3_green,
+      nisra_col4_purple
+    ),
+    # border required to ensure contrast between nisra blue and lilac
+    line = list(
+      color = "black",
+      width = 1
+    )
+  ),
+  # specify label colours to meet contrast standards
+  textfont = list(
+    family = "Arial",
+    color = c(
+      "white",
+      "white",
+      "black",
+      "white"
+    ),
+    size = 14
+  )
+) |>
+  layout(
+    # legend removed for accessibility (relies on colour to be able to
+    # understand it. Labels added to segments instead)
+    showlegend = FALSE,
+    font = list(
+      family = "Arial",
+      size = 12
+    ),
+    margin = list(
+      r = 70,
+      l = 70
+    )
+  )
+
+# modebar is series of icons and plotly logo linked to plotly site. Turned off
+# throughout to avoid multiple links going to same destination (poor
+# accessibility) and icons can create visual clutter.
+fig11 <- fig11 |>
+  config(
+    displayModeBar = FALSE
+  )
+
+fig11 <- htmlwidgets::onRender(
+  fig11,
+  "
+  function(el, x) {
+    window.fig11_chart = el;
+  }
+  "
+)
+
+fig11
+```
+
+```{r figure_11_dl_buttons}
+f_make_tables(
+  fig11_xls,
+  title = paste0(
+    "Figure 11: Northern Ireland population by age group ",
+    latest_year
+  ),
+  data_style = ns_comma,
+  data_dir = here(
+    "code",
+    "demo",
+    "demo_outputs",
+    "figdata"
+  ),
+  plotly_id = "fig11_chart"
+)
+```
+
+### Population pyramid 
+
+This population pyramid shows the number of people in each age group. It
+compares males and females in two different years that are ten years apart. The
+shaded areas show the most recent year. The lines show the earlier year. 
+
+#### Features
+* The 4 chart colours have enough contrast to make them easy to see.  
+* When you mouse over the chart, the hover label shows all the data for that age
+group at the same time. 
+
+Add clear text before or after the chart to explain the main message.
+
+#### Figure 12: The population of Northern Ireland is aging
+
+##### Northern Ireland population by age and sex (`r latest_year - 10` and `r latest_year`)
+
+```{r figure_12 population pyramid, echo = TRUE, warnings = FALSE, message = FALSE, fig.alt="Figure 12 alt text example. More detail on the trends are included in the text directly above or below the chart, and data can be downloaded using the button below", out.width="100%"}
+fig12 <- plot_ly(
+  fig_12_data,
+  y = ~Age,
+  orientation = "h",
+  type = "bar",
+  showlegend = FALSE,
+  hoverinfo = "none"
+) |>
+  add_trace(
+    x = as.formula(
+      paste0(
+        "~`Males ",
+        latest_year,
+        "`"
+      )
+    ),
+    name = paste(
+      "Males",
+      latest_year
+    ),
+    marker = list(
+      color = nisra_navy
+    ),
+    hoverinfo = "text+y",
+    hovertext = paste0(
+      "Males ",
+      latest_year,
+      ": ",
+      prettyNum(
+        fig_12_data[[
+          paste(
+            "Males",
+            latest_year
+          )
+        ]],
+        big.mark = ","
+      )
+    )
+  ) |>
+  add_trace(
+    x = as.formula(
+      paste0(
+        "~`Females ",
+        latest_year,
+        "`"
+      )
+    ),
+    name = paste(
+      "Females",
+      latest_year
+    ),
+    marker = list(
+      color = nisra_col3_green
+    ),
+    hoverinfo = "text+y",
+    hovertext = paste0(
+      "Females ",
+      latest_year,
+      ": ",
+      prettyNum(
+        abs(
+          fig_12_data[[
+            paste(
+              "Females",
+              latest_year
+            )
+          ]]
+        ),
+        big.mark = ","
+      )
+    )
+  ) |>
+  add_trace(
+    x = as.formula(
+      paste0(
+        "~`Males ",
+        latest_year - 10,
+        "`"
+      )
+    ),
+    type = "scatter",
+    mode = "lines",
+    name = paste(
+      "Males",
+      latest_year - 10
+    ),
+    line = list(
+      color = "#00b0f0",
+      width = 4
+    ),
+    showlegend = TRUE,
+    hoverinfo = "text+y",
+    hovertext = paste0(
+      "Males ",
+      latest_year - 10,
+      ": ",
+      prettyNum(
+        fig_12_data[[
+          paste(
+            "Males",
+            latest_year - 10
+          )
+        ]],
+        big.mark = ","
+      )
+    )
+  ) |>
+  add_trace(
+    x = as.formula(
+      paste0(
+        "~`Females ",
+        latest_year - 10,
+        "`"
+      )
+    ),
+    type = "scatter",
+    mode = "lines",
+    name = paste(
+      "Females",
+      latest_year - 10
+    ),
+    line = list(
+      color = "#2c523b",
+      width = 4
+    ),
+    showlegend = TRUE,
+    hoverinfo = "text+y",
+    hovertext = paste0(
+      "Females ",
+      latest_year - 10,
+      ": ",
+      prettyNum(
+        abs(
+          fig_12_data[[
+            paste(
+              "Females",
+              latest_year - 10
+            )
+          ]]
+        ),
+        big.mark = ","
+      )
+    )
+  ) |>
+  layout(
+    barmode = "overlay",
+    bargap = 0,
+    font = list(
+      family = "Arial",
+      size = 14
+    ),
+    xaxis = list(
+      title = "Persons (Thousands)",
+      tickformat = ",",
+      tickmode = "array",
+      tickvals = seq(
+        -15000,
+        15000,
+        by = 5000
+      ),
+      ticktext = as.character(
+        abs(
+          seq(
+            -15,
+            15,
+            by = 5
+          )
+        )
+      ),
+      range = c(
+        -15000,
+        15000
+      ),
+      showgrid = FALSE,
+      zeroline = FALSE, # Remove the internal vertical zero line
+      showline = TRUE, # Draw the solid x-axis line
+      linecolor = "black",
+      linewidth = 1,
+      ticks = "outside", # Tick marks on the axis
+      ticklen = 8,
+      tickwidth = 1,
+      tickcolor = "black",
+      mirror = FALSE, # Axis line only on the bottom
+      anchor = "y", # Tie axis to y-axis (removes gap)
+      fixedrange = TRUE,
+      domain = c(
+        0,
+        1
+      ), # Ensures the plot spans full width
+      constrain = "domain" # Keeps data flush to axes (no extra padding)
+    ),
+    yaxis = list(
+      title = "",
+      categoryorder = "category ascending",
+      tickvals = seq(
+        0,
+        90,
+        by = 10
+      ),
+      ticktext = c(
+        as.character(
+          seq(
+            0,
+            80,
+            by = 10
+          )
+        ),
+        "90+"
+      ),
+      showgrid = FALSE,
+      zeroline = FALSE, # Avoid extra horizontal line
+      showline = TRUE, # Draw solid y-axis line
+      linecolor = "black",
+      linewidth = 1,
+      ticks = "outside",
+      ticklen = 6,
+      tickwidth = 1,
+      tickcolor = "black",
+      range = c(
+        -0.5,
+        90.5
+      )
+    ),
+    legend = list(
+      orientation = "h",
+      xanchor = "center",
+      x = 0.5,
+      y = 1.1,
+      traceorder = "reversed"
+    ),
+    annotations = list(
+      list(
+        text = paste0(
+          "<b>Females\n",
+          latest_year,
+          "</b>"
+        ),
+        x = -5000,
+        xref = "x",
+        xanchor = "center",
+        y = 30,
+        yref = "y",
+        yanchor = "middle",
+        showarrow = FALSE,
+        font = list(
+          color = "#000",
+          size = 16
+        )
+      ),
+      list(
+        text = paste0(
+          "<b>Males\n",
+          latest_year,
+          "</b>"
+        ),
+        x = 5000,
+        xref = "x",
+        xanchor = "center",
+        y = 30,
+        yref = "y",
+        yanchor = "middle",
+        showarrow = FALSE,
+        font = list(
+          color = "#fff",
+          size = 16
+        )
+      )
+    ),
+    hovermode = "y unified"
+  )
+
+# modebar is series of icons and plotly logo linked to plotly site. Turned off
+# throughout to avoid multiple links going to same destination (poor
+# accessibility) and icons can create visual clutter.
+fig12 <- fig12 |>
+  config(
+    displayModeBar = FALSE
+  )
+
+fig12 <- htmlwidgets::onRender(
+  fig12,
+  "
+  function(el, x) {
+    window.fig12_chart = el;
+  }
+  "
+)
+
+fig12
+```
+
+```{r figure_12_dl_buttons}
+f_make_tables(
+  fig_12_xl,
+  title = paste0(
+    "Figure 12: Population by age and sex (",
+    latest_year - 10,
+    " and ",
+    latest_year,
+    ")"
+  ),
+  data_dir = here(
+    "code",
+    "demo",
+    "demo_outputs",
+    "figdata"
+  ),
+  plotly_id = "fig12_chart"
+)
+```
+
+### Flow chart
+
+This flow chart shows how the population in Northern Ireland changed between
+2021 and 2022. The chart was created in the Markdown document using shapes
+defined in the CSS file.
+
+#### Features
+* Background colours are all light to ensure black text stands out and is easy
+to read.
+* If you change the colours, make sure the text and background still have enough
+contrast to meet accessibility standards.
+
+Add clear text before or after the chart to explain the main message.
+
+#### Figure 13: Natural change is the main driver of population growth
+
+##### Components of population change in Northern Ireland (`r prev_year` and `r latest_year`)
+
+```{r fig13, echo=TRUE, results='asis'}
+cat(
+  sprintf(
+    '
+::::::::: div-row
+::: {.navy-box style="font-weight: bold"}
+%s\\
+Population\\
+(%s)
+:::
+
+::: arrow
+
+:::
+
+::: green-circle
+Natural\\
+Change\\
+%s
+:::
+
+::: blue-circle
+Net\\
+Migration\\
+%s
+:::
+
+::: green-circle
+Other\\
+Changes\\
+%s
+:::
+
+::: arrow
+
+:::
+
+::: {.navy-box style="font-weight: bold"}
+%s\\
+Population\\
+(%s)
+:::
+:::::::::
+',
+    prev_year,
+    pop_ni_last_rounded,
+    natural_change_sign,
+    net_migration_sign,
+    other_changes_sign,
+    latest_year,
+    pop_ni_current_rounded
+  )
+)
+```
+
+### Filled multiple line chart
+
+This chart shows population change in Northern Ireland over the course of five
+years by five broad age bands. Labels are placed at the start and end of each
+time series to avoid visual clutter.
+
+#### Figure 14: Over 65s see largest population growth
+
+##### Northern Ireland population change by age group (`r latest_year - 4` to `r latest_year`)
+
+```{r fig14 filled multiple line chart, echo = TRUE, warnings = FALSE, message = FALSE, fig.alt="Figure 14 alt text example. More detail on the trends are included in the text directly above or below the chart, and data can be downloaded using the button below", out.width="100%"}
+fig_14_plot <- plot_ly(
+  data = fig_14_data,
+  x = ~index,
+  y = ~pct,
+  fill = "tozeroy",
+  type = "scatter",
+  mode = "none",
+  color = ~age_grp_5,
+  fillcolor = nisra_blue,
+  hoverinfo = "text",
+  text = ~ paste(
+    mid_year_ending,
+    age_grp_5,
+    paste0(
+      round_half_up(
+        pct,
+        1
+      ),
+      "%"
+    ),
+    sep = "\n"
+  )
+) |>
+  layout(
+    font = list(
+      family = "Arial",
+      size = 12
+    ),
+    title = "",
+    xaxis = list(
+      title = "",
+      showticklabels = FALSE,
+      showgrid = FALSE
+    ),
+    yaxis = list(
+      title = "",
+      range = c(
+        0,
+        35
+      ),
+      showgrid = FALSE, # No vertical gridlines
+      zeroline = TRUE, # Keep the main x-axis line
+      showline = TRUE, # Ensure axis line is drawn
+      linecolor = "black", # Axis line color
+      linewidth = 1
+    ),
+    showlegend = FALSE,
+    margin = list(
+      b = 100
+    ),
+    hovermode = "x unified"
+  )
+
+fig_14_data$age_grp_5 <- as.factor(
+  fig_14_data$age_grp_5
+)
+
+age_groups <- c(
+  "Under 24",
+  "25 to 44",
+  "45 to 64",
+  "65 to 84",
+  "85 and over"
+)
+
+x_positions <- seq(
+  1 / (length(age_groups) * 2),
+  (length(age_groups) * 2 - 1) /
+    (length(age_groups) * 2),
+  length.out = length(age_groups)
+)
+
+annotations <- lapply(
+  seq_along(age_groups),
+  function(i) {
+    list(
+      text = age_groups[i],
+      x = x_positions[i],
+      xref = "paper",
+      xanchor = "center",
+      y = -0.1,
+      yref = "paper",
+      yanchor = "top",
+      showarrow = FALSE
+    )
+  }
+)
+
+annotations_left <- list()
+annotations_right <- list()
+
+for (i in seq_len(nrow(fig_14_data))) {
+  if (fig_14_data$index[i] %% 5 == 1) {
+    annotations_left[[i]] <- list(
+      x = fig_14_data$index[i],
+      y = 0,
+      text = fig_14_data$label[i],
+      xanchor = "left",
+      yanchor = "top",
+      xref = "x",
+      yref = "paper",
+      showarrow = FALSE
+    )
+  } else if (fig_14_data$index[i] %% 5 == 0) {
+    annotations_right[[i]] <- list(
+      x = fig_14_data$index[i],
+      y = 0,
+      text = fig_14_data$label[i],
+      xanchor = "right",
+      yanchor = "top",
+      xref = "x",
+      yref = "paper",
+      showarrow = FALSE
+    )
+  }
+}
+
+fig_14_plot <- fig_14_plot |>
+  layout(
+    annotations = c(
+      annotations,
+      annotations_left,
+      annotations_right
+    )
+  )
+
+for (i in seq_len(nrow(fig_14_data))) {
+  if (fig_14_data$mid_year_ending[i] == year_minus_four) {
+    fig_14_plot <- fig_14_plot |>
+      add_annotations(
+        text = paste0(
+          sprintf(
+            "%0.1f",
+            fig_14_data$pct[i]
+          ),
+          "%"
+        ),
+        x = fig_14_data$index[i],
+        y = fig_14_data$pct[i] + 1.4,
+        xanchor = "left",
+        yanchor = "bottom",
+        showarrow = FALSE
+      )
+  }
+
+  if (fig_14_data$mid_year_ending[i] == latest_year) {
+    fig_14_plot <- fig_14_plot |>
+      add_annotations(
+        text = paste0(
+          sprintf(
+            "%0.1f",
+            fig_14_data$pct[i]
+          ),
+          "%"
+        ),
+        x = fig_14_data$index[i],
+        y = fig_14_data$pct[i] + 1.4,
+        xanchor = "right",
+        yanchor = "bottom",
+        showarrow = FALSE
+      )
+  }
+}
+
+fig_14_plot <- fig_14_plot |>
+  f_responsive_annotations()
+
+fig14 <- fig_14_plot |>
+  config(
+    displayModeBar = FALSE
+  )
+
+fig14 <- htmlwidgets::onRender(
+  fig14,
+  "
+  function(el, x) {
+    window.fig14_chart = el;
+  }
+  "
+)
+
+fig14
+```
+
+```{r figure_14_dl_buttons}
+f_make_tables(
+  fig_14_data_xl,
+  title = paste0(
+    "Figure 14: Northern Ireland population change by age group (",
+    latest_year - 4,
+    " to ",
+    latest_year,
+    ")"
+  ),
+  data_dir = here(
+    "code",
+    "demo",
+    "demo_outputs",
+    "figdata"
+  ),
+  plotly_id = "fig14_chart"
+)
+```
+
+###  Diverging stacked bar 
+
+This chart has been included to show how to display data with positive and
+negative change.
+
+#### Figure 15: Hawaii had the largest positive population change
+
+##### Population change in selected US States in 2022
+
+```{r figure_15, echo = TRUE, fig.alt="Figure 15 alt text example. More detail on the trends are included in the text directly above or below the chart, and data can be downloaded using the button below", out.width="100%"}
+fig15 <- plot_ly(
+  fig_15_data_filtered,
+  x = ~`Net Migration & Other Changes`,
+  y = ~`Local Government District`,
+  type = "bar",
+  orientation = "h",
+  marker = list(
+    color = nisra_col3_green
+  ),
+  name = "Net migration and other changes",
+  hoverinfo = "text+x",
+  hovertext = ~ paste(
+    "Net migration:",
+    `Net Migration & Other Changes`
+  )
+) |>
+  add_trace(
+    x = ~`Natural Change (births minus deaths)`,
+    y = ~`Local Government District`,
+    type = "bar",
+    orientation = "h",
+    marker = list(
+      color = nisra_navy
+    ),
+    name = "Natural change (births minus deaths)",
+    hovertext = ~ paste(
+      "Natural change:",
+      `Natural Change (births minus deaths)`
+    )
+  ) |>
+  add_trace(
+    x = ~`Total Percentage Change`,
+    y = ~`Local Government District`,
+    type = "scatter",
+    mode = "markers",
+    marker = list(
+      color = nisra_blue,
+      size = 9,
+      symbol = "diamond",
+      line = list(
+        color = "#fff",
+        width = 2
+      )
+    ),
+    name = "Total percentage change",
+    hovertext = ~ paste(
+      "Total change:",
+      `Total Percentage Change`
+    )
+  ) |>
+  layout(
+    font = list(
+      family = "Arial",
+      size = 14
+    ),
+    barmode = "relative",
+    xaxis = list(
+      title = "Percentage change",
+      range = c(
+        -50,
+        50
+      ),
+      tickmode = "array", # manually define ticks
+      tickvals = c(
+        -50,
+        -25,
+        0,
+        25,
+        50
+      ), # exact tick positions
+      ticktext = c(
+        "-50%",
+        "-25%",
+        "0%",
+        "25%",
+        "50%"
+      ), # custom labels (optional)
+      automargin = TRUE,
+      tickfont = list(
+        size = 14
+      )
+    ),
+    yaxis = list(
+      title = "",
+      automargin = TRUE
+    ),
+    legend = list(
+      orientation = "h",
+      y = 1.35,
+      xanchor = "center"
+    ),
+    hovermode = "y unified",
+    margin = list(
+      l = 10,
+      r = 10,
+      t = 10,
+      b = 60
+    )
+  )
+
+fig15 <- fig15 |>
+  config(
+    displayModeBar = FALSE
+  )
+
+fig15 <- htmlwidgets::onRender(
+  fig15,
+  "
+  function(el, x) {
+    window.fig15_chart = el;
+  }
+  "
+)
+
+fig15
+```
+
+```{r figure_15_dl_buttons}
+f_make_tables(
+  fig_15_data_filtered,
+  title = "Figure 15: Population change in selected US States in 2022",
+  data_dir = here(
+    "code",
+    "demo",
+    "demo_outputs",
+    "figdata"
+  ),
+  plotly_id = "fig15_chart"
+)
+```
+
+### Other chart types
+
+There are many other charts and maps to choose from that can be coded in R and
+included in html reports. More information and examples can be explored in the
+following links:
+
+[Plotly R Open Source Graphing Library](https://plotly.com/r/#:~:text=Plotly's%20R%20graphing%20library%20makes,3D%20(WebGL%20based)%20charts.)
+
+[Plotly R Library Basic Charts](https://plotly.com/r/basic-charts/)
+
+[Plotly R Library Statistical Charts](https://plotly.com/r/statistical-charts/)
+
+[The R Graph Gallery](https://r-graph-gallery.com/index.html)
+
+[The R Graph Gallery - Interactive Charts](https://r-graph-gallery.com/interactive-charts.html)
+
+[Plotly cheat sheet for R (PDF, 2.6 MB)](https://images.plot.ly/plotly-documentation/images/r_cheat_sheet.pdf)
+
+[ggplot2 charts](https://r-charts.com/ggplot2/)
+
+[Data visualization with ggplot2](https://rstudio.github.io/cheatsheets/html/data-visualization.html)
+
+[Making Maps with R](https://www.geeksforgeeks.org/making-maps-with-r/)
+
+[Using ggplot2 to create maps](https://bookdown.org/nicohahn/making_maps_with_r5/docs/ggplot2.html)
+
+[Sankey Diagram](https://r-graph-gallery.com/sankey-diagram.html)
+
+[Building a flowchart](https://cran.r-project.org/web/packages/Gmisc/vignettes/Grid-based_flowcharts.html)

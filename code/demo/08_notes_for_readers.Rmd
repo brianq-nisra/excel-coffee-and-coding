@@ -1,0 +1,74 @@
+---
+title: "08 Notes for Readers Sub Report"
+output: html_document
+knit: (function(input, ...) {
+  rmarkdown::render(
+    input,
+    output_dir = "../demo/demo_outputs/",
+    output_file = paste0(
+      xfun::sans_ext(input),
+      "_",
+      format(Sys.time(), "%d-%m-%Y_%H%M"),
+      ".html"
+    ),
+    envir = globalenv()
+  )
+})
+---
+
+```{r notes_for_readers_settings, include=FALSE}
+# Set chunk options for all chunks in this file.
+
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  echo = FALSE
+)
+
+library(here)
+
+source(
+  here(
+    "code",
+    "demo",
+    "demo_data_prep.R"
+  )
+)
+```
+
+This part is separate from the main report so it is easier to find.
+
+Most reports have a section like this. It might be called Notes for Readers,
+Background Notes, or Helpful Information.
+
+This section should include:
+
+- meanings of important words, or links that explain them
+- information about how good the data is and anything people should be careful
+about
+- a link to a report that explains the quality of the data
+- any important things people should know about the data, including its limits
+- links to similar statistics from England, Scotland, Wales and, if needed, the
+Republic of Ireland
+If there are no similar statistics, explain why.
+
+This section may also include (if relevant):
+
+- information about how the statistics were made
+- information about where the data came from
+- links to other related statistics
+- information about how people use the statistics and how they should be used
+- links to social media accounts [X (Twitter)](https://x.com/NISRA) and [Facebook](https://www.facebook.com/nisra.gov.uk)
+- information about extra statistical services
+- the date of the next publication
+- links to [previous publications](https://www.nisra.gov.uk/publications/2021-mid-year-population-estimates-northern-ireland)
+
+
+### Requests for PDF Versions
+
+NISRA reports are usually published as web pages instead of PDF files.
+
+If someone asks for a PDF, one can be made by printing the web page as a PDF.
+However, these PDFs are not easy for everyone to use, so the web page is the
+preferred version. If a user requests a PDF version, one can be created by
+printing the HTML page to PDF using the browser's print function.
