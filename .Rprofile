@@ -30,7 +30,7 @@ Sys.setenv(RENV_CONFIG_REPOS_OVERRIDE = repo_override)
 options(repos = unlist(repo_list))
 
 # conditional activation of renv
-source("renv/activate.R")
+# source("renv/activate.R")
 
 # tell renv to prefer binary installs over source
 options(renv.config.install.prefer.binary = TRUE)
